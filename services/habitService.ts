@@ -33,18 +33,19 @@ export const habitService = {
     return getStorage<Habit>(STORAGE_KEYS.HABITS).filter(h => h.user_id === userId && h.is_active);
   },
 
-  createHabit: (userId: string, name: string): Habit => {
+  createHabit: (userId: string, name: string, dailyTarget: number = 1): Habit => {
     const habits = getStorage<Habit>(STORAGE_KEYS.HABITS);
     const activeCount = habits.filter(h => h.user_id === userId && h.is_active).length;
     
-    if (activeCount >= 3) {
-      throw new Error("Límite alcanzado / Limit reached");
+    if (activeCount >= 5) {
+      throw new Error("Límite alcanzado (máx 5) / Limit reached (max 5)");
     }
 
     const newHabit: Habit = {
       id: crypto.randomUUID(),
       user_id: userId,
       name: sanitize(name),
+      daily_target: Math.max(1, dailyTarget),
       created_at: new Date().toISOString(),
       is_active: true
     };
@@ -65,16 +66,16 @@ export const habitService = {
     setStorage(STORAGE_KEYS.HABITS, updated);
   },
 
-  toggleHabitLog: (habitId: string, date: string): boolean => {
-    const logs = getStorage<HabitLog>(STORAGE_KEYS.LOGS);
-    const existingIndex = logs.findIndex(l => l.habit_id === habitId && l.date === date);
+  addLogEntry: (habitId: string, date: string): void => {
+    const habits = getStorage<Habit>(STORAGE_KEYS.HABITS);
+    const habit = habits.find(h => h.id === habitId);
+    if (!habit) return;
 
-    if (existingIndex > -1) {
-      const updated = [...logs];
-      updated.splice(existingIndex, 1);
-      setStorage(STORAGE_KEYS.LOGS, updated);
-      return false;
-    } else {
+    const logs = getStorage<HabitLog>(STORAGE_KEYS.LOGS);
+    const todayLogsCount = logs.filter(l => l.habit_id === habitId && l.date === date).length;
+
+    // Only allow logs if target not yet exceeded significantly
+    if (todayLogsCount < habit.daily_target) {
       const newLog: HabitLog = {
         id: crypto.randomUUID(),
         habit_id: habitId,
@@ -82,35 +83,50 @@ export const habitService = {
         completed: true
       };
       setStorage(STORAGE_KEYS.LOGS, [...logs, newLog]);
-      return true;
+    }
+  },
+
+  removeLastLogEntry: (habitId: string, date: string): void => {
+    const logs = getStorage<HabitLog>(STORAGE_KEYS.LOGS);
+    const index = [...logs].reverse().findIndex(l => l.habit_id === habitId && l.date === date);
+    if (index > -1) {
+      const actualIndex = logs.length - 1 - index;
+      const updated = [...logs];
+      updated.splice(actualIndex, 1);
+      setStorage(STORAGE_KEYS.LOGS, updated);
     }
   },
 
   getHabitWithStats: (habit: Habit): HabitWithStats => {
-    const logs = getStorage<HabitLog>(STORAGE_KEYS.LOGS).filter(l => l.habit_id === habit.id);
+    const allLogs = getStorage<HabitLog>(STORAGE_KEYS.LOGS).filter(l => l.habit_id === habit.id);
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     
-    // Sorted unique completion dates
-    const completionDates = Array.from(new Set(logs.map(l => l.date)))
-      .sort((a, b) => b.localeCompare(a));
-    
-    const isCompletedToday = completionDates.includes(todayStr);
+    // Group logs by date
+    const logsByDate: Record<string, number> = {};
+    allLogs.forEach(log => {
+      logsByDate[log.date] = (logsByDate[log.date] || 0) + 1;
+    });
+
+    // Check if a day is "successful" (met daily target)
+    const isSuccess = (dateStr: string) => (logsByDate[dateStr] || 0) >= habit.daily_target;
+
+    const todayProgress = logsByDate[todayStr] || 0;
+    const isCompletedToday = isSuccess(todayStr);
     
     // Calculate Streak
     let streak = 0;
     let currentCheck = new Date(today);
     
-    // If not completed today, start checking from yesterday. 
-    // If yesterday was also missed, streak is 0.
+    // If target not met today, start checking from yesterday.
+    // However, if today target is ALREADY met, streak includes today.
     if (!isCompletedToday) {
       currentCheck.setDate(currentCheck.getDate() - 1);
     }
 
-    // Iterate backwards day by day
     while (true) {
       const dStr = currentCheck.toISOString().split('T')[0];
-      if (completionDates.includes(dStr)) {
+      if (isSuccess(dStr)) {
         streak++;
         currentCheck.setDate(currentCheck.getDate() - 1);
       } else {
@@ -119,19 +135,20 @@ export const habitService = {
     }
 
     // Weekly Consistency (last 7 days including today)
-    let completions = 0;
+    let successfulDays = 0;
     const checkDate = new Date(today);
     for (let i = 0; i < 7; i++) {
       const dStr = checkDate.toISOString().split('T')[0];
-      if (completionDates.includes(dStr)) completions++;
+      if (isSuccess(dStr)) successfulDays++;
       checkDate.setDate(checkDate.getDate() - 1);
     }
 
     return {
       ...habit,
       streak,
-      weeklyConsistency: Math.round((completions / 7) * 100),
-      isCompletedToday
+      weeklyConsistency: Math.round((successfulDays / 7) * 100),
+      isCompletedToday,
+      todayProgress
     };
   }
 };

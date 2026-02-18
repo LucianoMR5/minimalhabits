@@ -1,10 +1,21 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Minimal Discipline</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#10b981">
+    <meta name="description" content="High-focus, low-friction habit tracker for extreme consistency.">
+    <link rel="manifest" href="./manifest.json">
+    
+    <!-- iOS Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Discipline">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/9438/9438061.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,24 +26,54 @@
             background-color: #171717; /* neutral-900 */
             color: #f5f5f5;
             margin: 0;
+            overscroll-behavior-y: contain; /* Prevents pull-to-refresh on mobile PWA */
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Smooth transition for PWA standalone mode */
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow-x: hidden;
+        }
     </style>
     <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/client": "https://esm.sh/react-dom@^19.2.4/client",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/"
-  }
-}
-</script>
+    {
+      "imports": {
+        "react": "https://esm.sh/react@^19.2.4",
+        "react-dom/client": "https://esm.sh/react-dom@^19.2.4/client",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+        "react/": "https://esm.sh/react@^19.2.4/"
+      }
+    }
+    </script>
 </head>
 <body>
     <div id="root"></div>
     <!-- Entry point for the React application -->
     <script type="module" src="index.tsx"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+            window.addEventListener('load', () => {
+                // Construct the service worker path explicitly relative to current location
+                const swUrl = new URL('./sw.js', window.location.href).href;
+                
+                navigator.serviceWorker.register(swUrl)
+                    .then(reg => console.log('Service Worker registered at scope:', reg.scope))
+                    .catch(err => {
+                        // Silence origin mismatch errors in development/preview environments
+                        // This prevents console clutter when the PWA is viewed in an environment that restricts SWs
+                        if (err.message.includes('origin')) {
+                            console.warn('Service Worker registration skipped due to origin policy (expected in some preview environments). PWA features will be available on the final domain.');
+                        } else {
+                            console.error('Service Worker registration failed:', err);
+                        }
+                    });
+            });
+        }
+    </script>
 </body>
 </html>

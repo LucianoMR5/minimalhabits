@@ -9,6 +9,7 @@ export interface Habit {
   id: string;
   user_id: string;
   name: string;
+  daily_target: number; // How many times per day (default 1)
   created_at: string;
   is_active: boolean;
 }
@@ -24,6 +25,7 @@ export interface HabitWithStats extends Habit {
   streak: number;
   weeklyConsistency: number; // 0 to 100
   isCompletedToday: boolean;
+  todayProgress: number; // Current count for today
 }
 
 export type AuthState = {
