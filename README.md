@@ -1,20 +1,31 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Minimal Discipline Habit Tracker
 
-# Run and deploy your AI Studio app
+A high-focus, low-friction habit tracker designed for consistency. It limits you to **3 active habits** to ensure maximum discipline and zero distraction.
 
-This contains everything you need to run your app locally.
+## 🧠 Philosophy: "The Daily Three"
+Most habit trackers fail because of over-engineered features and "gamification fatigue". This project follows the **Minimal Discipline Protocol**:
+- **Constraint**: Maximum 3 habits. If you want a new one, you must archive an old one.
+- **Speed**: Log your day in under 10 seconds.
+- **Clarity**: High-contrast UI (Neutral 900 / Emerald 500) to keep the focus on the task, not the app.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1opKYzfmnXvHN8rTC_9ngTuOs1p8ZXMM4
+## 🛠 Tech Stack
+- **Frontend**: React 19 (ESM via esm.sh)
+- **Styling**: Tailwind CSS
+- **Storage**: LocalStorage (Persistence layer ready for Supabase/Firebase integration)
+- **Language**: Bilingual support (EN/ES)
 
-## Run Locally
+## 🚀 How to Run
+1. Clone the repository.
+2. Open `index.html` in any modern browser OR use a local dev server (like Live Server in VS Code).
+3. No build step required (Native ESM).
 
-**Prerequisites:**  Node.js
+---
 
+# Seguimiento de Hábitos de Disciplina Minimalista
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Un rastreador de hábitos de alto enfoque diseñado para la consistencia. Te limita a **3 hábitos activos** para asegurar la máxima disciplina y cero distracciones.
+
+## 🧠 Filosofía: "Los Tres Diarios"
+- **Restricción**: Máximo 3 hábitos.
+- **Velocidad**: Registra tu día en menos de 10 segundos.
+- **Claridad**: Interfaz de alto contraste para mantener el enfoque en la ejecución.
