@@ -53,10 +53,10 @@ const App: React.FC = () => {
     setAuthState({ user: null, isAuthenticated: false, isLoading: false });
   };
 
-  const handleAddHabit = (name: string, target: number) => {
+  const handleAddHabit = (name: string, target: number, emoji: string) => {
     if (!authState.user) return;
     try {
-      habitService.createHabit(authState.user.id, name, target);
+      habitService.createHabit(authState.user.id, name, target, emoji);
       refreshHabits();
     } catch (err: any) {
       alert(err.message);
@@ -84,7 +84,7 @@ const App: React.FC = () => {
   if (authState.isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-900">
-        <div className="w-8 h-8 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+        <div className="w-10 h-10 border-4 border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin shadow-emerald-500/20 shadow-xl"></div>
       </div>
     );
   }
@@ -94,25 +94,26 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-900 text-neutral-100 selection:bg-emerald-500 selection:text-black pb-20">
-      <nav className="border-b border-neutral-800 sticky top-0 bg-neutral-900/80 backdrop-blur-xl z-50">
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-neutral-900 text-neutral-100 selection:bg-emerald-500 selection:text-black pb-24 overflow-x-hidden">
+      {/* Navbar */}
+      <nav className="border-b border-neutral-800 sticky top-0 bg-neutral-900/80 backdrop-blur-2xl z-50">
+        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-6 h-6 bg-emerald-500 rounded-md flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <div className="w-1 h-1 bg-black rounded-full" />
+            <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center shadow-2xl shadow-emerald-500/40 rotate-12 transition-transform hover:rotate-0 duration-300">
+              <div className="w-1.5 h-1.5 bg-black rounded-full" />
             </div>
-            <span className="text-xs font-black tracking-tighter uppercase">{t('app_title')}</span>
+            <span className="text-sm font-black tracking-tighter uppercase text-white">{t('app_title')}</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <button 
               onClick={toggleLang}
-              className="text-[10px] font-black text-neutral-400 hover:text-white uppercase tracking-[0.2em] transition-colors border border-neutral-700 px-2 py-1 rounded"
+              className="text-[10px] font-black text-neutral-400 hover:text-white uppercase tracking-widest transition-colors border-2 border-neutral-800 px-3 py-1.5 rounded-xl hover:border-neutral-700"
             >
               {lang === 'en' ? 'ES' : 'EN'}
             </button>
             <button 
               onClick={handleLogout}
-              className="text-[10px] font-black text-neutral-500 hover:text-emerald-500 uppercase tracking-[0.2em] transition-colors"
+              className="text-[10px] font-black text-neutral-500 hover:text-emerald-400 uppercase tracking-widest transition-all"
             >
               {t('sign_out')}
             </button>
@@ -120,24 +121,26 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-6 py-10">
-        <header className="mb-10">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="text-emerald-500 text-[10px] font-black uppercase tracking-[0.3em]">{t('dashboard')}</span>
-            <div className="h-[1px] flex-1 bg-neutral-800" />
+      <main className="max-w-6xl mx-auto px-6 py-12">
+        <header className="mb-14">
+          <div className="flex items-center gap-4 mb-5">
+            <span className="text-emerald-500 text-[10px] font-black uppercase tracking-[0.4em]">{t('dashboard')}</span>
+            <div className="h-[2px] flex-1 bg-gradient-to-r from-neutral-800 to-transparent" />
           </div>
-          <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-4">{t('daily_three')}</h2>
-          <p className="text-neutral-400 text-base font-medium max-w-lg leading-relaxed">
-            {t('daily_three_sub')}
+          <h2 className="text-5xl md:text-6xl font-black text-white tracking-tighter mb-5 leading-none">
+            {t('daily_habits')}
+          </h2>
+          <p className="text-neutral-400 text-lg font-medium max-w-xl leading-relaxed">
+            {t('daily_habits_sub')}
           </p>
         </header>
 
         <StatsDashboard habits={habits} />
 
-        <div className="mb-16">
-          <HabitForm onAdd={handleAddHabit} disabled={habits.length >= 5} />
+        <div className="mb-20">
+          <HabitForm onAdd={handleAddHabit} disabled={habits.length >= 6} />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {habits.map(habit => (
               <HabitCard 
                 key={habit.id} 
@@ -148,19 +151,20 @@ const App: React.FC = () => {
               />
             ))}
             {habits.length === 0 && (
-              <div className="col-span-full bg-neutral-800/30 border-2 border-dashed border-neutral-800 rounded-3xl py-24 flex flex-col items-center justify-center text-center">
-                <p className="text-neutral-400 font-black uppercase tracking-[0.3em] text-[10px] mb-4">{t('no_habits')}</p>
-                <p className="text-neutral-500 text-sm px-6 font-medium max-w-xs">{t('no_habits_sub')}</p>
+              <div className="col-span-full bg-neutral-800/20 border-2 border-dashed border-neutral-800/60 rounded-[40px] py-32 flex flex-col items-center justify-center text-center backdrop-blur-sm">
+                <div className="text-6xl mb-6 animate-pulse">🌱</div>
+                <p className="text-neutral-300 font-black uppercase tracking-[0.4em] text-xs mb-4">{t('no_habits')}</p>
+                <p className="text-neutral-500 text-base px-8 font-medium max-w-sm">{t('no_habits_sub')}</p>
               </div>
             )}
           </div>
         </div>
 
-        <footer className="mt-20 border-t border-neutral-800 pt-10 text-center">
-          <div className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.4em] mb-4">
+        <footer className="mt-32 border-t border-neutral-800 pt-12 text-center">
+          <div className="text-[11px] font-black text-neutral-500 uppercase tracking-[0.5em] mb-6">
             {t('protocol')}
           </div>
-          <p className="text-neutral-600 text-[11px] font-semibold max-w-xs mx-auto leading-loose tracking-wider uppercase">
+          <p className="text-neutral-600 text-[11px] font-bold max-w-xs mx-auto leading-relaxed tracking-wider uppercase">
             {t('footer_text')}
           </p>
         </footer>

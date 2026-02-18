@@ -9,7 +9,8 @@ export interface Habit {
   id: string;
   user_id: string;
   name: string;
-  daily_target: number; // How many times per day (default 1)
+  emoji: string; // Added for visual identity
+  daily_target: number;
   created_at: string;
   is_active: boolean;
 }

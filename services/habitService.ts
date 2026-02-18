@@ -28,23 +28,39 @@ const setStorage = <T,>(key: string, data: T[]): void => {
 
 const sanitize = (text: string) => text.trim().replace(/[<>]/g, '');
 
+const suggestEmoji = (name: string): string => {
+  const lower = name.toLowerCase();
+  if (lower.includes('water') || lower.includes('agua')) return '💧';
+  if (lower.includes('book') || lower.includes('read') || lower.includes('leer')) return '📚';
+  if (lower.includes('gym') || lower.includes('workout') || lower.includes('train') || lower.includes('entrenar')) return '🏋️';
+  if (lower.includes('meditate') || lower.includes('yoga') || lower.includes('meditar')) return '🧘';
+  if (lower.includes('sleep') || lower.includes('dormir')) return '🛌';
+  if (lower.includes('code') || lower.includes('program') || lower.includes('estudiar')) return '💻';
+  if (lower.includes('eat') || lower.includes('food') || lower.includes('comer')) return '🥗';
+  if (lower.includes('walk') || lower.includes('caminar')) return '🚶';
+  return '🔥';
+};
+
 export const habitService = {
   getHabits: (userId: string): Habit[] => {
     return getStorage<Habit>(STORAGE_KEYS.HABITS).filter(h => h.user_id === userId && h.is_active);
   },
 
-  createHabit: (userId: string, name: string, dailyTarget: number = 1): Habit => {
+  createHabit: (userId: string, name: string, dailyTarget: number = 1, emoji?: string): Habit => {
     const habits = getStorage<Habit>(STORAGE_KEYS.HABITS);
     const activeCount = habits.filter(h => h.user_id === userId && h.is_active).length;
     
-    if (activeCount >= 5) {
-      throw new Error("Límite alcanzado (máx 5) / Limit reached (max 5)");
+    // Increased limit to 6
+    if (activeCount >= 6) {
+      throw new Error("Límite alcanzado (máx 6) / Limit reached (max 6)");
     }
 
+    const cleanName = sanitize(name);
     const newHabit: Habit = {
       id: crypto.randomUUID(),
       user_id: userId,
-      name: sanitize(name),
+      name: cleanName,
+      emoji: emoji?.trim() || suggestEmoji(cleanName),
       daily_target: Math.max(1, dailyTarget),
       created_at: new Date().toISOString(),
       is_active: true
@@ -74,7 +90,6 @@ export const habitService = {
     const logs = getStorage<HabitLog>(STORAGE_KEYS.LOGS);
     const todayLogsCount = logs.filter(l => l.habit_id === habitId && l.date === date).length;
 
-    // Only allow logs if target not yet exceeded significantly
     if (todayLogsCount < habit.daily_target) {
       const newLog: HabitLog = {
         id: crypto.randomUUID(),
@@ -86,40 +101,24 @@ export const habitService = {
     }
   },
 
-  removeLastLogEntry: (habitId: string, date: string): void => {
-    const logs = getStorage<HabitLog>(STORAGE_KEYS.LOGS);
-    const index = [...logs].reverse().findIndex(l => l.habit_id === habitId && l.date === date);
-    if (index > -1) {
-      const actualIndex = logs.length - 1 - index;
-      const updated = [...logs];
-      updated.splice(actualIndex, 1);
-      setStorage(STORAGE_KEYS.LOGS, updated);
-    }
-  },
-
   getHabitWithStats: (habit: Habit): HabitWithStats => {
     const allLogs = getStorage<HabitLog>(STORAGE_KEYS.LOGS).filter(l => l.habit_id === habit.id);
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     
-    // Group logs by date
     const logsByDate: Record<string, number> = {};
     allLogs.forEach(log => {
       logsByDate[log.date] = (logsByDate[log.date] || 0) + 1;
     });
 
-    // Check if a day is "successful" (met daily target)
     const isSuccess = (dateStr: string) => (logsByDate[dateStr] || 0) >= habit.daily_target;
 
     const todayProgress = logsByDate[todayStr] || 0;
     const isCompletedToday = isSuccess(todayStr);
     
-    // Calculate Streak
     let streak = 0;
     let currentCheck = new Date(today);
     
-    // If target not met today, start checking from yesterday.
-    // However, if today target is ALREADY met, streak includes today.
     if (!isCompletedToday) {
       currentCheck.setDate(currentCheck.getDate() - 1);
     }
@@ -134,7 +133,6 @@ export const habitService = {
       }
     }
 
-    // Weekly Consistency (last 7 days including today)
     let successfulDays = 0;
     const checkDate = new Date(today);
     for (let i = 0; i < 7; i++) {
